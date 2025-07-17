@@ -15,7 +15,7 @@ import {
   GetMicroagentPromptResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
+import { ApiSettings, PostApiSettings, Provider, LLMConfig } from "#/types/settings";
 import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
@@ -328,6 +328,61 @@ class OpenHands {
   ): Promise<boolean> {
     const data = await openHands.post("/api/settings", settings);
     return data.status === 200;
+  }
+
+  /**
+   * Get all LLM configurations
+   * @returns List of LLM configurations
+   */
+  static async getLLMConfigs(): Promise<LLMConfig[]> {
+    const { data } = await openHands.get<LLMConfig[]>("/api/llm-configs");
+    console.log("[API Debug] getLLMConfigs response:", { 
+      data, 
+      dataType: typeof data, 
+      isArray: Array.isArray(data) 
+    });
+    return data;
+  }
+
+  /**
+   * Create a new LLM configuration
+   * @param config - The LLM configuration to create
+   * @returns The created LLM configuration
+   */
+  static async createLLMConfig(config: Omit<LLMConfig, "id" | "api_key_set"> & { api_key?: string }): Promise<LLMConfig> {
+    const { data } = await openHands.post<LLMConfig>("/api/llm-configs", config);
+    return data;
+  }
+
+  /**
+   * Update an existing LLM configuration
+   * @param id - The ID of the configuration to update
+   * @param config - The updated configuration
+   * @returns The updated LLM configuration
+   */
+  static async updateLLMConfig(id: string, config: Omit<LLMConfig, "id" | "api_key_set"> & { api_key?: string }): Promise<LLMConfig> {
+    const { data } = await openHands.put<LLMConfig>(`/api/llm-configs/${id}`, config);
+    return data;
+  }
+
+  /**
+   * Delete an LLM configuration
+   * @param id - The ID of the configuration to delete
+   * @returns true if successful
+   */
+  static async deleteLLMConfig(id: string): Promise<boolean> {
+    const response = await openHands.delete(`/api/llm-configs/${id}`);
+    return response.status === 200;
+  }
+
+  /**
+   * Set an LLM configuration as default
+   * @param id - The ID of the configuration to set as default
+   * @returns true if successful
+   */
+  static async setDefaultLLMConfig(id: string): Promise<boolean> {
+    const response = await openHands.post(`/api/llm-configs/${id}/set-default`);
+    return response.status === 200;
   }
 
   static async createCheckoutSession(amount: number): Promise<string> {

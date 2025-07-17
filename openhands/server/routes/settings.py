@@ -10,6 +10,7 @@ from openhands.server.dependencies import get_dependencies
 from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
     GETSettingsModel,
+    LLMConfigWithoutApiKey,
 )
 from openhands.server.shared import config
 from openhands.server.user_auth import (
@@ -62,13 +63,50 @@ async def load_settings(
                 if provider_token.token or provider_token.user_id:
                     provider_tokens_set[provider_type] = provider_token.host
 
+        # Handle migration from old single LLM config to new multiple configs
+        if not settings.llm_configs and settings.llm_model:
+            # Create default config from legacy settings
+            from openhands.storage.data_models.settings import LLMConfigSettings
+            import uuid
+            
+            default_config = LLMConfigSettings(
+                id='default',
+                name='Default',
+                model=settings.llm_model,
+                api_key=settings.llm_api_key,
+                base_url=settings.llm_base_url,
+                temperature=0.0,
+                top_p=1.0,
+                max_output_tokens=None,
+            )
+            settings.llm_configs = [default_config]
+            settings.default_llm_config_id = 'default'
+            # Save the migrated settings
+            await settings_store.store(settings)
+
+        # Convert LLM configs to frontend format (without exposing API keys)
+        llm_configs_with_status = []
+        for config in settings.llm_configs:
+            llm_configs_with_status.append(LLMConfigWithoutApiKey(
+                id=config.id,
+                name=config.name,
+                model=config.model,
+                base_url=config.base_url,
+                api_version=config.api_version,
+                temperature=config.temperature,
+                top_p=config.top_p,
+                max_output_tokens=config.max_output_tokens,
+                api_key_set=config.api_key is not None and bool(config.api_key)
+            ))
+
         settings_with_token_data = GETSettingsModel(
-            **settings.model_dump(exclude={'secrets_store'}),
+            **settings.model_dump(exclude={'secrets_store', 'llm_configs'}),
             llm_api_key_set=settings.llm_api_key is not None
             and bool(settings.llm_api_key),
             search_api_key_set=settings.search_api_key is not None
             and bool(settings.search_api_key),
             provider_tokens_set=provider_tokens_set,
+            llm_configs_with_status=llm_configs_with_status,
         )
         settings_with_token_data.llm_api_key = None
         settings_with_token_data.search_api_key = None
@@ -124,6 +162,11 @@ async def store_llm_settings(
         # Keep existing search API key if not provided
         if settings.search_api_key is None:
             settings.search_api_key = existing_settings.search_api_key
+        # Keep existing LLM configs if not provided
+        if not settings.llm_configs:
+            settings.llm_configs = existing_settings.llm_configs
+        if settings.default_llm_config_id is None:
+            settings.default_llm_config_id = existing_settings.default_llm_config_id
 
     return settings
 

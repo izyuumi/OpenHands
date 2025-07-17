@@ -5,10 +5,11 @@ export function createChatMessage(
   image_urls: string[],
   file_urls: string[],
   timestamp: string,
+  llm_config_id?: string,
 ) {
   const event = {
     action: ActionType.MESSAGE,
-    args: { content: message, image_urls, file_urls, timestamp },
+    args: { content: message, image_urls, file_urls, timestamp, llm_config_id },
   };
   return event;
 }

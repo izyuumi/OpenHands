@@ -17,6 +17,19 @@ from openhands.core.config.utils import load_openhands_config
 from openhands.storage.data_models.user_secrets import UserSecrets
 
 
+class LLMConfigSettings(BaseModel):
+    """LLM configuration with a unique identifier"""
+    id: str
+    name: str  # Display name for the configuration
+    model: str
+    api_key: SecretStr | None = None
+    base_url: str | None = None
+    api_version: str | None = None
+    temperature: float = 0.0
+    top_p: float = 1.0
+    max_output_tokens: int | None = None
+
+
 class Settings(BaseModel):
     """
     Persisted settings for OpenHands sessions
@@ -27,9 +40,11 @@ class Settings(BaseModel):
     max_iterations: int | None = None
     security_analyzer: str | None = None
     confirmation_mode: bool | None = None
-    llm_model: str | None = None
-    llm_api_key: SecretStr | None = None
-    llm_base_url: str | None = None
+    llm_model: str | None = None  # Default LLM model (backward compatibility)
+    llm_api_key: SecretStr | None = None  # Default LLM API key (backward compatibility)
+    llm_base_url: str | None = None  # Default LLM base URL (backward compatibility)
+    llm_configs: list[LLMConfigSettings] = Field(default_factory=list)  # Multiple LLM configurations
+    default_llm_config_id: str | None = None  # ID of the default LLM configuration
     remote_runtime_resource_factor: int | None = None
     # Planned to be removed from settings
     secrets_store: UserSecrets = Field(default_factory=UserSecrets, frozen=True)
@@ -64,6 +79,21 @@ class Settings(BaseModel):
             return api_key.get_secret_value()
 
         return pydantic_encoder(api_key)
+    
+    @field_serializer('llm_configs')
+    def llm_configs_serializer(self, llm_configs: list[LLMConfigSettings], info: SerializationInfo):
+        """Custom serializer for LLM configurations."""
+        context = info.context
+        expose_secrets = context and context.get('expose_secrets', False)
+        
+        serialized_configs = []
+        for config in llm_configs:
+            config_dict = config.model_dump()
+            if not expose_secrets and config.api_key:
+                config_dict['api_key'] = pydantic_encoder(config.api_key)
+            serialized_configs.append(config_dict)
+        
+        return serialized_configs
 
     @model_validator(mode='before')
     @classmethod
@@ -122,6 +152,19 @@ class Settings(BaseModel):
         if hasattr(app_config, 'mcp'):
             mcp_config = app_config.mcp
 
+        # Create default LLM configuration
+        default_llm_config = LLMConfigSettings(
+            id='default',
+            name='Default',
+            model=llm_config.model,
+            api_key=llm_config.api_key,
+            base_url=llm_config.base_url,
+            api_version=llm_config.api_version,
+            temperature=llm_config.temperature,
+            top_p=llm_config.top_p,
+            max_output_tokens=llm_config.max_output_tokens,
+        )
+
         settings = Settings(
             language='en',
             agent=app_config.default_agent,
@@ -131,6 +174,8 @@ class Settings(BaseModel):
             llm_model=llm_config.model,
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
+            llm_configs=[default_llm_config],
+            default_llm_config_id='default',
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             mcp_config=mcp_config,
             search_api_key=app_config.search_api_key,

@@ -33,6 +33,7 @@ import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
+import { LLMSelector } from "./llm-selector";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -73,6 +74,7 @@ export function ChatInterface() {
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
   const { mutateAsync: uploadFiles } = useUploadFiles();
+  const [selectedLLMConfigId, setSelectedLLMConfigId] = React.useState<string | undefined>();
 
   const optimisticUserMessage = getOptimisticUserMessage();
   const errorMessage = getErrorMessage();
@@ -140,7 +142,7 @@ export function ChatInterface() {
     const prompt =
       uploadedFiles.length > 0 ? `${content}\n\n${filePrompt}` : content;
 
-    send(createChatMessage(prompt, imageUrls, uploadedFiles, timestamp));
+    send(createChatMessage(prompt, imageUrls, uploadedFiles, timestamp, selectedLLMConfigId));
     setOptimisticUserMessage(content);
     setMessageToSend(null);
   };
@@ -252,6 +254,15 @@ export function ChatInterface() {
           </div>
 
           {errorMessage && <ErrorMessageBanner message={errorMessage} />}
+
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex-1" />
+            <LLMSelector
+              selectedConfigId={selectedLLMConfigId}
+              onSelect={setSelectedLLMConfigId}
+              disabled={curAgentState === AgentState.RUNNING}
+            />
+          </div>
 
           <InteractiveChatBox
             onSubmit={handleSendMessage}

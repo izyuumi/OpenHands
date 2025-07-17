@@ -1711,6 +1711,22 @@
         "de": "LLM",
         "uk": "LLM"
     },
+    "SETTINGS$NAV_LLM_CONFIGS": {
+        "en": "LLM Configurations",
+        "ja": "LLM設定",
+        "zh-CN": "LLM配置",
+        "zh-TW": "LLM配置",
+        "ko-KR": "LLM 구성",
+        "no": "LLM-konfigurasjoner",
+        "it": "Configurazioni LLM",
+        "pt": "Configurações LLM",
+        "es": "Configuraciones LLM",
+        "ar": "تكوينات LLM",
+        "fr": "Configurations LLM",
+        "tr": "LLM Yapılandırmaları",
+        "de": "LLM-Konfigurationen",
+        "uk": "Конфігурації LLM"
+    },
     "GIT$MERGE_REQUEST": {
         "en": "Merge Request",
         "ja": "マージリクエスト",

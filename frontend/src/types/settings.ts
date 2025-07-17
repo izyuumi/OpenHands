@@ -28,6 +28,18 @@ export type MCPConfig = {
   stdio_servers: MCPStdioServer[];
 };
 
+export type LLMConfig = {
+  id: string;
+  name: string;
+  model: string;
+  base_url: string | null;
+  api_version: string | null;
+  temperature: number;
+  top_p: number;
+  max_output_tokens: number | null;
+  api_key_set: boolean;
+};
+
 export type Settings = {
   LLM_MODEL: string;
   LLM_BASE_URL: string;
@@ -49,6 +61,8 @@ export type Settings = {
   MAX_BUDGET_PER_TASK: number | null;
   EMAIL?: string;
   EMAIL_VERIFIED?: boolean;
+  LLM_CONFIGS?: LLMConfig[];
+  DEFAULT_LLM_CONFIG_ID?: string;
 };
 
 export type ApiSettings = {
@@ -75,6 +89,8 @@ export type ApiSettings = {
   };
   email?: string;
   email_verified?: boolean;
+  llm_configs_with_status?: LLMConfig[];
+  default_llm_config_id?: string;
 };
 
 export type PostSettings = Settings & {
