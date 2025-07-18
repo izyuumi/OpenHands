@@ -15,7 +15,12 @@ import {
   GetMicroagentPromptResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings, Provider, LLMConfig } from "#/types/settings";
+import {
+  ApiSettings,
+  PostApiSettings,
+  Provider,
+  LLMConfig,
+} from "#/types/settings";
 import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
@@ -336,10 +341,10 @@ class OpenHands {
    */
   static async getLLMConfigs(): Promise<LLMConfig[]> {
     const { data } = await openHands.get<LLMConfig[]>("/api/llm-configs");
-    console.log("[API Debug] getLLMConfigs response:", { 
-      data, 
-      dataType: typeof data, 
-      isArray: Array.isArray(data) 
+    console.log("[API Debug] getLLMConfigs response:", {
+      data,
+      dataType: typeof data,
+      isArray: Array.isArray(data),
     });
     return data;
   }
@@ -349,8 +354,13 @@ class OpenHands {
    * @param config - The LLM configuration to create
    * @returns The created LLM configuration
    */
-  static async createLLMConfig(config: Omit<LLMConfig, "id" | "api_key_set"> & { api_key?: string }): Promise<LLMConfig> {
-    const { data } = await openHands.post<LLMConfig>("/api/llm-configs", config);
+  static async createLLMConfig(
+    config: Omit<LLMConfig, "id" | "api_key_set"> & { api_key?: string },
+  ): Promise<LLMConfig> {
+    const { data } = await openHands.post<LLMConfig>(
+      "/api/llm-configs",
+      config,
+    );
     return data;
   }
 
@@ -360,8 +370,14 @@ class OpenHands {
    * @param config - The updated configuration
    * @returns The updated LLM configuration
    */
-  static async updateLLMConfig(id: string, config: Omit<LLMConfig, "id" | "api_key_set"> & { api_key?: string }): Promise<LLMConfig> {
-    const { data } = await openHands.put<LLMConfig>(`/api/llm-configs/${id}`, config);
+  static async updateLLMConfig(
+    id: string,
+    config: Omit<LLMConfig, "id" | "api_key_set"> & { api_key?: string },
+  ): Promise<LLMConfig> {
+    const { data } = await openHands.put<LLMConfig>(
+      `/api/llm-configs/${id}`,
+      config,
+    );
     return data;
   }
 

@@ -4,20 +4,16 @@ import { AxiosError } from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { LLMConfig } from "#/types/settings";
-import { 
-  displayErrorToast, 
-  displaySuccessToast 
+import {
+  displayErrorToast,
+  displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
-import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsInput } from "#/components/features/settings/settings-input";
-import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
-import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
-import { getProviderId } from "#/utils/map-provider";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useSettings } from "#/hooks/query/use-settings";
 
@@ -30,18 +26,17 @@ interface LLMConfigFormData {
   api_version?: string | null;
 }
 
-function LLMConfigForm({ 
-  config, 
-  onSave, 
-  onCancel 
-}: { 
-  config?: LLMConfig; 
+function LLMConfigForm({
+  config,
+  onSave,
+  onCancel,
+}: {
+  config?: LLMConfig;
   onSave: (data: LLMConfigFormData) => void;
   onCancel: () => void;
 }) {
-  const { t } = useTranslation();
   const { data: resources } = useAIConfigOptions();
-  
+
   const [formData, setFormData] = React.useState<LLMConfigFormData>({
     id: config?.id,
     name: config?.name || "",
@@ -51,24 +46,24 @@ function LLMConfigForm({
     api_version: config?.api_version || "",
   });
 
-  const modelsAndProviders = organizeModelsAndProviders(
-    resources?.models || [],
-  );
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-transparent rounded-lg p-6 space-y-4 border border-gray-200 dark:border-gray-700">
+    <form
+      onSubmit={handleSubmit}
+      className="bg-transparent rounded-lg p-6 space-y-4 border border-gray-200 dark:border-gray-700"
+    >
       <h3 className="text-lg font-semibold">
         {config ? "Edit LLM Configuration" : "New LLM Configuration"}
       </h3>
-      
+
       <SettingsInput
         label="Configuration Name"
         name="name"
+        type="text"
         value={formData.name}
         onChange={(value) => setFormData({ ...formData, name: value })}
         required
@@ -77,6 +72,7 @@ function LLMConfigForm({
       <SettingsInput
         label="Model"
         name="model"
+        type="text"
         value={formData.model}
         onChange={(value) => setFormData({ ...formData, model: value })}
         required
@@ -95,22 +91,22 @@ function LLMConfigForm({
       <SettingsInput
         label="Base URL (optional)"
         name="base_url"
+        type="text"
         value={formData.base_url || ""}
-        onChange={(value) => setFormData({ ...formData, base_url: value || null })}
+        onChange={(value) =>
+          setFormData({ ...formData, base_url: value || null })
+        }
         placeholder="https://api.openai.com/v1"
       />
 
       <div className="flex gap-2 pt-4">
-        <BrandButton
-          type="submit"
-          variant="primary"
-        >
+        <BrandButton type="submit" variant="primary">
           {config ? "Update" : "Create"}
         </BrandButton>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="px-4 py-2 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
         >
           Cancel
         </button>
@@ -119,13 +115,13 @@ function LLMConfigForm({
   );
 }
 
-function LLMConfigItem({ 
-  config, 
+function LLMConfigItem({
+  config,
   isDefault,
-  onEdit, 
+  onEdit,
   onDelete,
-  onSetDefault 
-}: { 
+  onSetDefault,
+}: {
   config: LLMConfig;
   isDefault: boolean;
   onEdit: () => void;
@@ -133,7 +129,7 @@ function LLMConfigItem({
   onSetDefault: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+    <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
       <div className="flex items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -151,7 +147,7 @@ function LLMConfigItem({
         </div>
         <KeyStatusIcon isSet={config.api_key_set} />
       </div>
-      
+
       <div className="flex gap-2">
         {!isDefault && (
           <button
@@ -183,33 +179,39 @@ export default function LLMConfigsScreen() {
   const queryClient = useQueryClient();
   const { data: settings } = useSettings();
   const { mutate: saveSettings } = useSaveSettings();
-  
+
   const [showForm, setShowForm] = React.useState(false);
-  const [editingConfig, setEditingConfig] = React.useState<LLMConfig | undefined>();
+  const [editingConfig, setEditingConfig] = React.useState<
+    LLMConfig | undefined
+  >();
 
   // Query for LLM configurations
-  const { data: configs = [], isLoading, error } = useQuery({
+  const {
+    data: configs = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["llm-configs"],
     queryFn: OpenHands.getLLMConfigs,
   });
-  
+
   // Diagnostic logging
   React.useEffect(() => {
-    console.log("[LLM Configs Debug] Component state:", { 
-      configs, 
-      isLoading, 
+    console.log("[LLM Configs Debug] Component state:", {
+      configs,
+      isLoading,
       error,
       configsType: typeof configs,
       isArray: Array.isArray(configs),
       showForm,
       editingConfig,
-      shouldShowAddButton: !showForm && !editingConfig
+      shouldShowAddButton: !showForm && !editingConfig,
     });
   }, [configs, isLoading, error, showForm, editingConfig]);
 
   // Mutations
   const createMutation = useMutation({
-    mutationFn: (data: LLMConfigFormData) => 
+    mutationFn: (data: LLMConfigFormData) =>
       OpenHands.createLLMConfig(data as any),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["llm-configs"] });
@@ -223,7 +225,7 @@ export default function LLMConfigsScreen() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: LLMConfigFormData }) => 
+    mutationFn: ({ id, data }: { id: string; data: LLMConfigFormData }) =>
       OpenHands.updateLLMConfig(id, data as any),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["llm-configs"] });
@@ -250,9 +252,12 @@ export default function LLMConfigsScreen() {
 
   const setDefaultMutation = useMutation({
     mutationFn: OpenHands.setDefaultLLMConfig,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["llm-configs"] });
-      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    onSuccess: async () => {
+      // Batch invalidations to reduce cascading updates
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["llm-configs"] }),
+        queryClient.invalidateQueries({ queryKey: ["settings"] }),
+      ]);
       displaySuccessToast("Default LLM configuration updated");
     },
     onError: (error: AxiosError) => {
@@ -281,17 +286,18 @@ export default function LLMConfigsScreen() {
 
   // Ensure configs is always an array
   const safeConfigs = Array.isArray(configs) ? configs : [];
-  
+
   if (isLoading) {
     return <div className="p-9">Loading...</div>;
   }
-  
+
   if (error) {
     console.error("[LLM Configs] Error fetching configs:", error);
     return (
       <div className="p-9">
         <div className="text-red-600">
-          Error loading LLM configurations: {error instanceof Error ? error.message : "Unknown error"}
+          Error loading LLM configurations:{" "}
+          {error instanceof Error ? error.message : "Unknown error"}
         </div>
       </div>
     );
@@ -327,7 +333,8 @@ export default function LLMConfigsScreen() {
         <div className="space-y-2">
           {safeConfigs.length === 0 ? (
             <p className="text-gray-500 text-center py-8">
-              No LLM configurations yet. Click "Add Configuration" to create one.
+              No LLM configurations yet. Click "Add Configuration" to create
+              one.
             </p>
           ) : (
             safeConfigs.map((config) => (

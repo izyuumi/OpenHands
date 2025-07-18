@@ -74,7 +74,20 @@ export function ChatInterface() {
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
   const { mutateAsync: uploadFiles } = useUploadFiles();
-  const [selectedLLMConfigId, setSelectedLLMConfigId] = React.useState<string | undefined>();
+  const [selectedLLMConfigId, setSelectedLLMConfigId] = React.useState<
+    string | undefined
+  >(() => {
+    // Persist LLM config selection in sessionStorage for stability
+    const stored = sessionStorage.getItem("selectedLLMConfigId");
+    return stored || undefined;
+  });
+
+  // Update sessionStorage when selection changes
+  React.useEffect(() => {
+    if (selectedLLMConfigId) {
+      sessionStorage.setItem("selectedLLMConfigId", selectedLLMConfigId);
+    }
+  }, [selectedLLMConfigId]);
 
   const optimisticUserMessage = getOptimisticUserMessage();
   const errorMessage = getErrorMessage();
@@ -142,7 +155,15 @@ export function ChatInterface() {
     const prompt =
       uploadedFiles.length > 0 ? `${content}\n\n${filePrompt}` : content;
 
-    send(createChatMessage(prompt, imageUrls, uploadedFiles, timestamp, selectedLLMConfigId));
+    send(
+      createChatMessage(
+        prompt,
+        imageUrls,
+        uploadedFiles,
+        timestamp,
+        selectedLLMConfigId,
+      ),
+    );
     setOptimisticUserMessage(content);
     setMessageToSend(null);
   };

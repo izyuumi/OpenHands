@@ -7,6 +7,7 @@ export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
     content: string;
     image_urls: string[];
     file_urls: string[];
+    llm_config_id?: string;
   };
 }
 
