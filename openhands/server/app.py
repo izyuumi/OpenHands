@@ -3,7 +3,9 @@ import warnings
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
+from fastapi import Request
 from fastapi.routing import Mount
+from fastapi.responses import JSONResponse
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -14,6 +16,7 @@ from fastapi import (
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
+from openhands.core.logger import openhands_logger as logger
 from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
@@ -30,7 +33,9 @@ from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import conversation_manager
 
+logger.info('Creating FastMCP http_app with path=/mcp')
 mcp_app = mcp_server.http_app(path='/mcp')
+logger.info('FastMCP http_app created successfully')
 
 
 def combine_lifespans(*lifespans):
@@ -58,6 +63,25 @@ app = FastAPI(
     lifespan=combine_lifespans(_lifespan, mcp_app.lifespan),
     routes=[Mount(path='/mcp', app=mcp_app)],
 )
+
+
+@app.get('/mcp-debug')
+async def mcp_debug(request: Request):
+    """Debug endpoint to check MCP server configuration"""
+    return JSONResponse({
+        'status': 'OK',
+        'mcp_app_mounted': '/mcp' in [str(route.path) for route in app.routes],
+        'mcp_server_info': {
+            'name': 'mcp',
+            'stateless_http': True,
+            'tools_available': ['create_pr', 'create_mr', 'create_bitbucket_pr']
+        },
+        'request_info': {
+            'method': request.method,
+            'url': str(request.url),
+            'headers': dict(request.headers)
+        }
+    })
 
 
 app.include_router(public_api_router)
